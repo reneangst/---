@@ -1,11 +1,9 @@
+// Первое задание
+
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-//Первое задание
 
 namespace draft
 {
@@ -80,71 +78,193 @@ namespace draft
     {
         public static void Main(string[] args)
         {
-            List<Temperature> temperatures = new List<Temperature>();
-            string filePath = "temperatures.txt";
-
+            // Пример использования
             try
             {
-                // Загрузка данных из файла
-                if (File.Exists(filePath))
+                List<Temperature> temperatures = new List<Temperature>
                 {
-                    using (StreamReader reader = new StreamReader(filePath))
-                    {
-                        string line;
-                        while ((line = reader.ReadLine()) != null)
-                        {
-                            string[] parts = line.Split(new char[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
-                            if (parts.Length == 2)
-                            {
-                                try
-                                {
-                                    temperatures.Add(new Temperature(parts[0], parts[1]));
-                                }
-                                catch (ArgumentException e)
-                                {
-                                    Console.WriteLine($"Ошибка при создании объекта температуры: {e.Message}");
-                                }
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"Файл {filePath} не найден.");
-                    return;
-                }
-
-
-                Console.WriteLine("Исходный список температур:");
+                    new Temperature("25C", "Комнатная температура"),
+                    new Temperature("100F", "Температура кипения воды"),
+                    new Temperature("0K", "Абсолютный ноль"),
+                     new Temperature("373.15K", "Температура кипения воды"),
+                    new Temperature("150C", "Температура в духовке"),
+                     new Temperature("77F", "Тепло"),
+                    new Temperature("10C", "Холодно"),
+                     new Temperature("20C", "Прохладно"),
+                     new Temperature("-10C", "Зима")
+                };
+                // Вывод неотсортированного списка
+                Console.WriteLine("Неотсортированный список:");
                 foreach (var temp in temperatures)
                 {
                     Console.WriteLine(temp);
                 }
+                Console.WriteLine();
 
-                // Попытка вызвать Sort (до реализации IComparable) - закомментировано, так как теперь IComparable реализован temperatures.Sort(); // Вызовет исключение до реализации IComparable<Temperature>
-
-                // 4. Сортировка списка с использованием IComparable<T> (по возрастанию)
+                // Сортировка списка по возрастанию температуры
                 temperatures.Sort();
-                Console.WriteLine("\nСписок температур после сортировки по возрастанию:");
-                foreach (var temp in temperatures)
-                {
-                    Console.WriteLine(temp);
-                }
 
-                // Сортировка с использованием компаратора (лямбда-выражение, по убыванию)
-                temperatures.Sort((temp1, temp2) => temp2.K.CompareTo(temp1.K));
-                Console.WriteLine("\nСписок температур после сортировки по убыванию:");
+                // Вывод отсортированного списка
+                Console.WriteLine("Отсортированный список (по возрастанию температуры):");
                 foreach (var temp in temperatures)
                 {
                     Console.WriteLine(temp);
                 }
+                Console.WriteLine();
+               
+                // Поиск самой высокой температуры
+                Temperature maxTemp = temperatures.Max();
+                Console.WriteLine($"Самая высокая температура: {maxTemp}");
+
+                // Поиск самой низкой температуры
+                Temperature minTemp = temperatures.Min();
+                Console.WriteLine($"Самая низкая температура: {minTemp}");
+
+                // Пример использования Linq для поиска температур выше 20C
+                var hotTemperatures = temperatures.Where(temp => temp.C > 20).ToList();
+                Console.WriteLine("Температуры выше 20C:");
+                foreach (var temp in hotTemperatures)
+                {
+                    Console.WriteLine(temp);
+                }
+            
             }
-            catch (Exception e)
+            catch (ArgumentException ex)
             {
-                Console.WriteLine($"Возникла ошибка: {e.Message}");
+                Console.WriteLine($"Ошибка: {ex.Message}");
             }
+             Console.ReadKey();
+        }
+    }
+}
 
-            Console.ReadKey();
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+//Второе задание
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+public class Point
+{
+    public double X { get; set; }
+    public double Y { get; set; }
+
+    public Point(double x, double y)
+    {
+        X = x;
+        Y = y;
+    }
+
+    public override string ToString()
+    {
+        return $"({X:F3}, {Y:F3})";
+    }
+}
+
+public class PointComparers
+{
+     // Компаратор для сортировки по расстоянию от начала координат
+    public class DistanceFromOriginComparer : IComparer<Point>
+    {
+        public int Compare(Point p1, Point p2)
+        {
+            double dist1 = Math.Sqrt(p1.X * p1.X + p1.Y * p1.Y);
+            double dist2 = Math.Sqrt(p2.X * p2.X + p2.Y * p2.Y);
+            return dist1.CompareTo(dist2);
+        }
+    }
+
+    // Компаратор для сортировки по расстоянию от оси абсцисс (оси X)
+    public class DistanceFromXAxisComparer : IComparer<Point>
+    {
+        public int Compare(Point p1, Point p2)
+        {
+           return Math.Abs(p1.Y).CompareTo(Math.Abs(p2.Y));
+        }
+    }
+
+    // Компаратор для сортировки по расстоянию от оси ординат (оси Y)
+    public class DistanceFromYAxisComparer : IComparer<Point>
+    {
+        public int Compare(Point p1, Point p2)
+        {
+            return Math.Abs(p1.X).CompareTo(Math.Abs(p2.X));
+        }
+    }
+
+    // Компаратор для сортировки по расстоянию от диагонали y=x
+    public class DistanceFromDiagonalComparer : IComparer<Point>
+    {
+        public int Compare(Point p1, Point p2)
+        {
+            double dist1 = Math.Abs(p1.Y - p1.X) / Math.Sqrt(2);
+            double dist2 = Math.Abs(p2.Y - p2.X) / Math.Sqrt(2);
+            return dist1.CompareTo(dist2);
+        }
+    }
+}
+
+
+public class Program
+{
+    // Метод для генерации случайных точек
+    public static List<Point> GenerateRandomPoints(int count)
+    {
+        Random random = new Random();
+        List<Point> points = new List<Point>();
+
+        for (int i = 0; i < count; i++)
+        {
+            double x = random.NextDouble();
+            double y = random.NextDouble();
+            points.Add(new Point(x, y));
+        }
+        return points;
+    }
+   
+    public static void Main(string[] args)
+    {
+        // Генерация случайных точек
+        List<Point> points = GenerateRandomPoints(10);
+
+        Console.WriteLine("Исходные точки:");
+        foreach (var point in points)
+        {
+            Console.WriteLine(point);
+        }
+
+        // Сортировка по расстоянию от начала координат
+        points.Sort(new PointComparers.DistanceFromOriginComparer());
+        Console.WriteLine("\nТочки, отсортированные по удалению от начала координат:");
+        foreach (var point in points)
+        {
+            Console.WriteLine(point);
+        }
+        
+         // Сортировка по расстоянию от оси абсцисс
+        points.Sort(new PointComparers.DistanceFromXAxisComparer());
+        Console.WriteLine("\nТочки, отсортированные по удалению от оси абсцисс:");
+        foreach (var point in points)
+        {
+            Console.WriteLine(point);
+        }
+
+        // Сортировка по расстоянию от оси ординат
+        points.Sort(new PointComparers.DistanceFromYAxisComparer());
+        Console.WriteLine("\nТочки, отсортированные по удалению от оси ординат:");
+        foreach (var point in points)
+        {
+            Console.WriteLine(point);
+        }
+        
+        // Сортировка по расстоянию от диагонали y=x
+         points.Sort(new PointComparers.DistanceFromDiagonalComparer());
+        Console.WriteLine("\nТочки, отсортированные по удалению от диагонали y=x:");
+        foreach (var point in points)
+        {
+            Console.WriteLine(point);
         }
     }
 }
