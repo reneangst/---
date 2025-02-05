@@ -7,8 +7,98 @@ using System.Linq;
 
 namespace draft
 {
+    public class Program
+{
+    public static void Main(string[] args)
+    {
+        List<Temperature> temperatures = new List<Temperature>();
+
+        try
+        {
+            // Создаем файл (если его нет) и записываем данные в него
+            if (!File.Exists("temperatures.txt"))
+            {
+                using (StreamWriter writer = new StreamWriter("temperatures.txt"))
+                {
+                    writer.WriteLine("0C Замерзание воды");
+                    writer.WriteLine("97,9F Норма человеческого тела");
+                    writer.WriteLine("100С Кипение воды");
+                    writer.WriteLine("3780K Кипение углерода");
+                    writer.WriteLine("0K Абсолютный ноль");
+                    writer.WriteLine("1356,55K Плавление меди");
+                    writer.WriteLine("0F Замерзание дурацкой смеси");
+                }
+            }
+
+            // Загружаем данные
+            using (StreamReader reader = new StreamReader("temperatures.txt"))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    string[] parts = line.Split(new char[] { ' ' }, 2);
+                    if (parts.Length == 2)
+                    {
+                        try
+                        {
+                            // Извлекаем значение и единицу измерения из температуры
+                            string tempString = parts[0];
+                            char unit = tempString[tempString.Length - 1];
+                            string valueString = tempString.Substring(0, tempString.Length - 1);
+
+                            // Парсим числовое значение, используя CurrentCulture
+                            double value = double.Parse(valueString, CultureInfo.CurrentCulture);
+
+                            // Преобразуем в Кельвины
+                            double kelvin = double.Parse(value, unit);
+
+                            Temperature temp = new Temperature(parts[1], kelvin);
+                            temperatures.Add(temp);
+                        }
+                        catch (ArgumentException e)
+                        {
+                            Console.WriteLine($"Ошибка при обработке строки '{line}': {e.Message}");
+                        }
+                        catch (FormatException e)
+                        {
+                            Console.WriteLine($"Ошибка формата при обработке строки '{line}': {e.Message}");
+                        }
+                    }
+                }
+            }
+
+            // Сортировка списка
+            temperatures.Sort();
+            Console.WriteLine("Температуры в порядке возрастания:");
+            foreach (Temperature temp in temperatures)
+            {
+                Console.WriteLine(temp);
+            }
+
+            // Сортировка по убыванию с использованием компаратора
+            temperatures.Sort((t1, t2) => t2.K.CompareTo(t1.K));
+            Console.WriteLine("\nТемпературы в порядке убывания:");
+            foreach (Temperature temp in temperatures)
+            {
+                Console.WriteLine(temp);
+            }
+        }
+        catch (FileNotFoundException)
+        {
+            Console.WriteLine("Файл temperatures.txt не найден.");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Произошла ошибка: {e.Message}");
+        }
+
+        Console.ReadKey();
+    }
+
+}
+
 // Создаем наследственный класс температуры с IComparable. В ней создаем температуру в Кельвинах, указывание температуры и описание температуры
-    public class Temperature : IComparable<Temperature>
+public class Temperature : IComparable<Temperature>
 {
     private double tempk;
     private string orig;
@@ -66,66 +156,6 @@ namespace draft
     {
         return tempk.CompareTo(other.tempk);
     }
-}
-
-public class Program
-{
-    public static void Main(string[] args)
-    {
-        List<Temperature> temperatures = new List<Temperature>();
-
-        try
-        {
-            // Загружаем данные
-            using (StreamReader reader = new StreamReader("temperatures.txt"))
-            {
-                string line;
-                while ((line = reader.ReadLine()) != null)
-                {
-                    string[] parts = line.Split(new char[] { ' ' }, 2);
-                    if (parts.Length == 2)
-                    {
-                        try
-                        {
-                            Temperature temp = new Temperature(parts[0], parts[1]);
-                            temperatures.Add(temp);
-                        }
-                        catch (ArgumentException e)
-                        {
-                            Console.WriteLine($"Ошибка при обработке строки '{line}': {e.Message}");
-                        }
-                    }
-                }
-            }
-
-            // Сортировка списка
-            temperatures.Sort();
-            Console.WriteLine("Температуры в порядке возрастания:");
-            foreach (Temperature temp in temperatures)
-            {
-                Console.WriteLine(temp);
-            }
-
-            // Сортировка по убыванию с использованием компаратора
-            temperatures.Sort((t1, t2) => t2.K.CompareTo(t1.K));
-            Console.WriteLine("\nТемпературы в порядке убывания:");
-            foreach (Temperature temp in temperatures)
-            {
-                Console.WriteLine(temp);
-            }
-        }
-        catch (FileNotFoundException)
-        {
-            Console.WriteLine("Файл temperatures.txt не найден.");
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine($"Произошла ошибка: {e.Message}");
-        }
-
-        Console.ReadKey();
-    }
-}
 }
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
