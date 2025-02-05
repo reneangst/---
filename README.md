@@ -7,137 +7,126 @@ using System.Linq;
 
 namespace draft
 {
-    // Класс Temperature, реализующий IComparable<Temperature>
+// Создаем наследственный класс температуры с IComparable. В ней создаем температуру в Кельвинах, указывание температуры и описание температуры
     public class Temperature : IComparable<Temperature>
+{
+    private double tempk;
+    private string orig;
+    private string desc;
+
+    public double C => tempk - 273.15;
+    public double F => (tempk - 273.15) * 9 / 5 + 32;
+    public double K => tempk;
+    public string Description => desc;
+
+    // Создаем конструктор температуры, внутри которой считается описание и указывание.
+    public Temperature(string tempStr, string description)
     {
-        private double tempk; // Температура в Кельвинах
-        private string orig; // Исходное представление температуры
-        private string desc; // Описание температуры
+        desc = description;
+        orig = tempStr;
 
-        // Конструктор, принимающий на вход два строковых значения: температуру и её описание
-        public Temperature(string tempStr, string desc)
+        // Разделяем строку температуры на значение и единицу измерения
+        string value = tempStr.Substring(0, tempStr.Length - 1);
+        char unit = tempStr[tempStr.Length - 1];
+
+        double tempValue;
+
+        if (!double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out tempValue))
         {
-            this.orig = tempStr;
-            this.desc = desc;
-
-            // Парсинг температуры и преобразование в Кельвины
-            double tempValue;
-            char unit = tempStr.Last();
-            string value = tempStr.Substring(0, tempStr.Length - 1);
-
-            if (!double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out tempValue))
-            {
-                throw new ArgumentException($"Некорректное значение температуры: {tempStr}");
-            }
-
-            switch (unit)
-            {
-                case 'C':
-                    tempk = tempValue + 273.15;
-                    break;
-                case 'F':
-                    tempk = (tempValue - 32) * 5 / 9 + 273.15;
-                    break;
-                case 'K':
-                    tempk = tempValue;
-                    break;
-                default:
-                    throw new ArgumentException($"Некорректная единица измерения: {unit}");
-            }
-
-            // Проверка на абсолютный ноль
-            if (tempk < 0)
-            {
-                throw new ArgumentException($"Температура не может быть ниже абсолютного нуля: {tempk}K");
-            }
+            throw new ArgumentException($"Некорректное значение температуры: {tempStr}");
         }
 
-
-        // Свойства для получения температуры в разных единицах
-        public double C => tempk - 273.15;
-        public double F => (tempk - 273.15) * 9 / 5 + 32;
-        public double K => tempk;
-
-        // Свойство для получения описания
-        public string Description => desc;
-
-        // Переопределение метода ToString
-        public override string ToString()
+        switch (unit)
         {
-            return $"{orig} {desc}";
+            case 'C':
+                tempk = tempValue + 273.15;
+                break;
+            case 'F':
+                tempk = (tempValue - 32) * 5 / 9 + 273.15;
+                break;
+            case 'K':
+                tempk = tempValue;
+                break;
+            default:
+                throw new ArgumentException($"Некорректная единица измерения: {unit}");
         }
 
-        // Реализация интерфейса IComparable<Temperature>
-        public int CompareTo(Temperature other)
+        if (tempk < 0)
         {
-            return tempk.CompareTo(other.tempk);
+            throw new ArgumentException("Температура ниже абсолютного нуля");
         }
     }
 
-    public class Program
+    public override string ToString()
     {
-        public static void Main(string[] args)
-        {
-            // Пример использования
-            try
-            {
-                List<Temperature> temperatures = new List<Temperature>
-                {
-                    new Temperature("25C", "Комнатная температура"),
-                    new Temperature("100F", "Температура кипения воды"),
-                    new Temperature("0K", "Абсолютный ноль"),
-                     new Temperature("373.15K", "Температура кипения воды"),
-                    new Temperature("150C", "Температура в духовке"),
-                     new Temperature("77F", "Тепло"),
-                    new Temperature("10C", "Холодно"),
-                     new Temperature("20C", "Прохладно"),
-                     new Temperature("-10C", "Зима")
-                };
-                // Вывод неотсортированного списка
-                Console.WriteLine("Неотсортированный список:");
-                foreach (var temp in temperatures)
-                {
-                    Console.WriteLine(temp);
-                }
-                Console.WriteLine();
+        return $"{orig} {desc}";
+    }
 
-                // Сортировка списка по возрастанию температуры
-                temperatures.Sort();
-
-                // Вывод отсортированного списка
-                Console.WriteLine("Отсортированный список (по возрастанию температуры):");
-                foreach (var temp in temperatures)
-                {
-                    Console.WriteLine(temp);
-                }
-                Console.WriteLine();
-               
-                // Поиск самой высокой температуры
-                Temperature maxTemp = temperatures.Max();
-                Console.WriteLine($"Самая высокая температура: {maxTemp}");
-
-                // Поиск самой низкой температуры
-                Temperature minTemp = temperatures.Min();
-                Console.WriteLine($"Самая низкая температура: {minTemp}");
-
-                // Пример использования Linq для поиска температур выше 20C
-                var hotTemperatures = temperatures.Where(temp => temp.C > 20).ToList();
-                Console.WriteLine("Температуры выше 20C:");
-                foreach (var temp in hotTemperatures)
-                {
-                    Console.WriteLine(temp);
-                }
-            
-            }
-            catch (ArgumentException ex)
-            {
-                Console.WriteLine($"Ошибка: {ex.Message}");
-            }
-             Console.ReadKey();
-        }
+    public int CompareTo(Temperature other)
+    {
+        return tempk.CompareTo(other.tempk);
     }
 }
 
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        List<Temperature> temperatures = new List<Temperature>();
+
+        try
+        {
+            // Загружаем данные
+            using (StreamReader reader = new StreamReader("temperatures.txt"))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    string[] parts = line.Split(new char[] { ' ' }, 2);
+                    if (parts.Length == 2)
+                    {
+                        try
+                        {
+                            Temperature temp = new Temperature(parts[0], parts[1]);
+                            temperatures.Add(temp);
+                        }
+                        catch (ArgumentException e)
+                        {
+                            Console.WriteLine($"Ошибка при обработке строки '{line}': {e.Message}");
+                        }
+                    }
+                }
+            }
+
+            // Сортировка списка
+            temperatures.Sort();
+            Console.WriteLine("Температуры в порядке возрастания:");
+            foreach (Temperature temp in temperatures)
+            {
+                Console.WriteLine(temp);
+            }
+
+            // Сортировка по убыванию с использованием компаратора
+            temperatures.Sort((t1, t2) => t2.K.CompareTo(t1.K));
+            Console.WriteLine("\nТемпературы в порядке убывания:");
+            foreach (Temperature temp in temperatures)
+            {
+                Console.WriteLine(temp);
+            }
+        }
+        catch (FileNotFoundException)
+        {
+            Console.WriteLine("Файл temperatures.txt не найден.");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Произошла ошибка: {e.Message}");
+        }
+
+        Console.ReadKey();
+    }
+}
+}
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 //Второе задание
@@ -146,6 +135,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+// Создаем класс Point. В ней добавляем x и y
 public class Point
 {
     public double X { get; set; }
@@ -157,16 +147,18 @@ public class Point
         Y = y;
     }
 
+    // Создаем объявление переопределённого метода, внутри которой возвращаем строку с координатами X и Y
     public override string ToString()
     {
         return $"({X:F3}, {Y:F3})";
     }
 }
 
+// Создаем класс PointComparers. Внутри создаем наследственные классы для каждого компаратора
 public class PointComparers
 {
      // Компаратор для сортировки по расстоянию от начала координат
-    public class DistanceFromOriginComparer : IComparer<Point>
+    public class Distance : IComparer<Point>
     {
         public int Compare(Point p1, Point p2)
         {
@@ -177,7 +169,7 @@ public class PointComparers
     }
 
     // Компаратор для сортировки по расстоянию от оси абсцисс (оси X)
-    public class DistanceFromXAxisComparer : IComparer<Point>
+    public class DistanceX : IComparer<Point>
     {
         public int Compare(Point p1, Point p2)
         {
@@ -186,7 +178,7 @@ public class PointComparers
     }
 
     // Компаратор для сортировки по расстоянию от оси ординат (оси Y)
-    public class DistanceFromYAxisComparer : IComparer<Point>
+    public class DistanceY : IComparer<Point>
     {
         public int Compare(Point p1, Point p2)
         {
@@ -195,7 +187,7 @@ public class PointComparers
     }
 
     // Компаратор для сортировки по расстоянию от диагонали y=x
-    public class DistanceFromDiagonalComparer : IComparer<Point>
+    public class DistanceDiagonal : IComparer<Point>
     {
         public int Compare(Point p1, Point p2)
         {
@@ -236,7 +228,7 @@ public class Program
         }
 
         // Сортировка по расстоянию от начала координат
-        points.Sort(new PointComparers.DistanceFromOriginComparer());
+        points.Sort(new PointComparers.Distance());
         Console.WriteLine("\nТочки, отсортированные по удалению от начала координат:");
         foreach (var point in points)
         {
@@ -244,7 +236,7 @@ public class Program
         }
         
          // Сортировка по расстоянию от оси абсцисс
-        points.Sort(new PointComparers.DistanceFromXAxisComparer());
+        points.Sort(new PointComparers.DistanceX());
         Console.WriteLine("\nТочки, отсортированные по удалению от оси абсцисс:");
         foreach (var point in points)
         {
@@ -252,7 +244,7 @@ public class Program
         }
 
         // Сортировка по расстоянию от оси ординат
-        points.Sort(new PointComparers.DistanceFromYAxisComparer());
+        points.Sort(new PointComparers.DistanceY());
         Console.WriteLine("\nТочки, отсортированные по удалению от оси ординат:");
         foreach (var point in points)
         {
@@ -260,7 +252,7 @@ public class Program
         }
         
         // Сортировка по расстоянию от диагонали y=x
-         points.Sort(new PointComparers.DistanceFromDiagonalComparer());
+        points.Sort(new PointComparers.DistanceDiagonal());
         Console.WriteLine("\nТочки, отсортированные по удалению от диагонали y=x:");
         foreach (var point in points)
         {
